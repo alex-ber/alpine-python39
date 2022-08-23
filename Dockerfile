@@ -12,6 +12,8 @@ RUN set -ex && \
 # See: https://github.com/Docker-Hub-frolvlad/docker-alpine-python3/pull/13
 ENV PYTHONUNBUFFERED=1
 ENV LANG=C.UTF-8
+#https://stackoverflow.com/questions/68673221/warning-running-pip-as-the-root-user
+ENV PIP_ROOT_USER_ACTION=ignore
 
 #see below
 #ARG GLIBC_REPO=https://github.com/$GLIBC_REPO_INFIX/alpine-pkg-glibc
@@ -49,52 +51,141 @@ RUN set -ex && \
 #lapack-dev is installed from openblas-dev
 #32 packages installed, one of them is musl-dev
 RUN set -ex && \
-    apk add --no-cache make=4.3-r0 gcc=11.2.1_git20220219-r2 build-base=0.5-r3 freetype-dev=2.12.1-r0 \
-                       gfortran=11.2.1_git20220219-r2 lapack-dev musl-dev=1.2.3-r0 openblas-dev=0.3.20-r0
+    apk add --no-cache make=4.3-r0 gcc=10.3.1_git20211027-r0 build-base=0.5-r3 freetype-dev=2.11.1-r2 \
+                       gfortran=10.3.1_git20211027-r0 lapack-dev musl-dev=1.2.2-r7 openblas-dev=0.3.18-r1
 
 
-##ssl, curl
-##for curl-dev see https://stackoverflow.com/a/51849028/1137529
-##for libffi-dev see https://stackoverflow.com/a/58396708/1137529
-##note libffi, musl-dev are installed above
-##for cargo see https://github.com/pyca/cryptography/issues/5776#issuecomment-775158562
-##21 package is installed
-#RUN set -ex && \
-#    apk add --no-cache openssl-dev=1.1.1q-r0 cyrus-sasl-dev=2.1.28-r0 \
-#                       linux-headers=5.16.7-r1 unixodbc-dev=2.3.11-r0 curl-dev=7.83.1-r2 libffi-dev=3.4.2-r1 \
-#                       cargo=1.60.0-r2 musl-dev=1.2.3-r0
-#
-#
-##https://stackoverflow.com/questions/5178416/libxml-install-error-using-pip
-##python3-dev (we need C++ header for cffi)
-##note make is unstalled above
-#RUN set -ex && \
-#    apk add --no-cache xz-dev=5.2.5-r1 libxslt=1.1.35-r0 libxml2-dev=2.9.14-r0 libxslt-dev=1.1.35-r0 \
-#                       make=4.3-r0 python3-dev
+#ssl, curl
+#for curl-dev see https://stackoverflow.com/a/51849028/1137529
+#for libffi-dev see https://stackoverflow.com/a/58396708/1137529
+#note libffi, musl-dev are installed above
+#for cargo see https://github.com/pyca/cryptography/issues/5776#issuecomment-775158562
+#21 package is installed
+RUN set -ex && \
+    apk add --no-cache openssl-dev=1.1.1q-r0 cyrus-sasl-dev=2.1.28-r0 \
+                       linux-headers=5.10.41-r0 unixodbc-dev=2.3.9-r1 curl-dev=7.80.0-r2 libffi-dev=3.4.2-r1 \
+                       cargo=1.56.1-r0 musl-dev=1.2.2-r7
+
+#https://github.com/h5py/h5py/issues/1461#issuecomment-562871041
+#https://stackoverflow.com/questions/66705108/how-to-install-hdf5-on-docker-image-with-linux-alpine-3-13
+RUN set -ex && \
+    apk add --no-cache hdf5-dev=1.12.2-r0
 
 
-#https://stackoverflow.com/questions/66221278/alpine-docker-define-specific-python-version-python3-3-8-7-r0breaks-worldpyt
-#alpine-16 already uses Python 3.
+
+
+#Git
+RUN set -ex && \
+   apk add --no-cache pcre2=10.40-r0 git=2.34.4-r0 && \
+   #git config --global credential.helper store
+   #git config --global credential.helper cache
+   #see https://git-scm.com/docs/git-credential-cache
+   git config --global credential.helper 'cache --timeout=3600'
+
+
+
+#bash+nano+mlocate
+#curl is installed above
+RUN set -ex && \
+    apk --no-cache add bash=5.1.16-r0 nano=5.9-r0 mlocate=0.26-r7 && \
+    updatedb && \
+    #disable coloring for nano, see https://stackoverflow.com/a/55597765/1137529
+    echo "syntax \"disabled\" \".\"" > ~/.nanorc; echo "color green \"^$\"" >> ~/.nanorc
+
+#install glibc (another c++ compiler, older one)
+# do all in one step
+RUN set -ex && \
+    #Remarked by Alex \
+    #apk -U upgrade && \
+    #Alex added --no-cache
+    apk --no-cache add libstdc++=10.3.1_git20211027-r0 curl=7.80.0-r2 && \
+    #Added  by Alex \
+    #Alex added --no-cache
+    apk --no-cache add mii-tool=1.60_git20140218-r2 net-tools=1.60_git20140218-r2 && \
+    wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
+    #Added by Alex \
+    if [ "$ARCH" = "arm64v8" ]; then suffix='-arm64'; else suffix=''; fi && \
+    #Added by Alex \
+    if [ "$ARCH" = "arm64v8" ]; then infix='ljfranklin'; else infix='sgerrand'; fi && \
+    GLIBC_REPO=https://github.com/$infix/alpine-pkg-glibc && \
+    for pkg in glibc-${GLIBC_VERSION} glibc-bin-${GLIBC_VERSION} glibc-i18n-${GLIBC_VERSION}; do curl -sSL ${GLIBC_REPO}/releases/download/${GLIBC_VERSION}${suffix}/${pkg}.apk -o /tmp/${pkg}.apk; done  && \
+    #Alex added --no-cache
+    apk --no-cache --allow-untrusted add /tmp/*.apk && \
+    rm -v /tmp/*.apk && \
+    ( /usr/glibc-compat/bin/localedef --force --inputfile POSIX --charmap UTF-8 C.UTF-8 || true ) && \
+    echo "export LANG=C.UTF-8" > /etc/profile.d/locale.sh && \
+    /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib
+
+#https://stackoverflow.com/questions/9510474/removing-pips-cache
+#https://pip.pypa.io/en/stable/reference/pip_install/#caching
+#pip config set global.cache-dir false doesn't work
+#https://stackoverflow.com/questions/9510474/removing-pips-cache/61762308#61762308
+RUN mkdir -p /root/.config/pip
+RUN echo "[global]" > /root/.config/pip/pip.conf; echo "no-cache-dir = false" >> /root/.config/pip/pip.conf; echo >> /root/.config/pip/pip.conf;
+
+
+
+#https://stackoverflow.com/questions/5178416/libxml-install-error-using-pip
+#python3-dev (we need C++ header for cffi)
+#note make is unstalled above
+RUN set -ex && \
+    apk add --no-cache libxslt=1.1.35-r0 libxslt-dev=1.1.35-r0 \
+                        libxml2-dev=2.9.14-r1 python3-dev=3.9.13-r1
+
+
+#https://stackoverflow.com/a/62555259/1137529
+RUN set -ex && \
+    ln -s /usr/bin/python3.9 /usr/bin/python && \
+    ln -s /usr/bin/python3.9-config /usr/bin/python-config && \
+    python -m ensurepip && \
+    cp /usr/bin/pip3.9 /usr/bin/pip
+
+
+RUN set -ex && \
+   pip install --upgrade pip==22.2.2 setuptools==58.1.0 wheel==0.36.1
+
+RUN set -ex && \
+    pip install ruamel_yaml==0.15.100
+
+RUN set -ex && \
+        #entrypoints==0.2.3 used in setup.py
+        #This version of PyYAML==5.1 works with awscli
+        #pyyaml installation from pypi
+        pip install entrypoints==0.2.3 pyyaml==5.1
+
+
+#slim
+RUN set -ex && \
+        #pin pyOpenSSL requests tqdm
+        pip install cffi==1.15.1 cryptography==37.0.4 idna==3.3 pycparser==2.21  pyOpenSSL==22.0.0 \
+                    requests==2.28.1 chardet==5.0.0 tqdm==4.64.0  urllib3==1.26.12 toml==0.10.2 \
+                    charset-normalizer==2.1.1 pycparser==2.21 urllib3==1.26.12 && \
+         #fabric & pyOpenSSL
+         pip install fabric==2.7.1 invoke==1.7.1 paramiko==2.11.0 PyNaCl==1.5.0 bcrypt==3.2.2 \
+                     cffi==1.15.1 cryptography==37.0.4 pycparser==2.21 PyNaCl==1.5.0 six==1.16.0 \
+                     pyOpenSSL==22.0.0 \
+                     pathlib2==2.3.7 && \
+        pip install python-dotenv==0.20.0 && \
+        pip install bidict==0.22.0 && \
+        pip install python-dateutil==2.8.2
+
+        #boto3
+
+
+
+
 
 #
 #
-##Git
-#RUN set -ex && \
-#   apk add --no-cache pcre2=10.40-r0 git=2.36.2-r0 && \
-#   #git config --global credential.helper store
-#   #git config --global credential.helper cache
-#   #see https://git-scm.com/docs/git-credential-cache
-#   git config --global credential.helper 'cache --timeout=3600'
-#
-#
-#
-##bash+nano+mlocate
-##curl is installed above
-#RUN set -ex && \
-#    apk --no-cache add bash=5.1.16-r2 nano=6.3-r0 mlocate=0.26-r7 && \
-#    updatedb && \
-#    #disable coloring for nano, see https://stackoverflow.com/a/55597765/1137529
-#    echo "syntax \"disabled\" \".\"" > ~/.nanorc; echo "color green \"^$\"" >> ~/.nanorc
+#        #twine
+#        #https://twine.readthedocs.io/en/latest/changelog.html see 3.3.0 changelog
+#        #Add Python 3.9 support
+#        #see https://github.com/pypa/twine/pull/708
+#       #pip install twine==3.7.1
+
+
+
+
 
 #Cleanup
 RUN set -ex && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
