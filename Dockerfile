@@ -151,40 +151,36 @@ RUN set -ex && \
         #entrypoints==0.2.3 used in setup.py
         #This version of PyYAML==5.1 works with awscli
         #pyyaml installation from pypi
-        pip install entrypoints==0.2.3 pyyaml==5.1
+        pip install entrypoints==0.2.3 pyyaml==5.1 && \
+        pip install MarkupSafe==2.0.1 Jinja2==2.11.2 && \
+        pip install toml==0.10.2
 
 
 #slim
 RUN set -ex && \
-        #pin pyOpenSSL requests tqdm
-        pip install cffi==1.15.1 cryptography==37.0.4 idna==3.3 pycparser==2.21  pyOpenSSL==22.0.0 \
-                    requests==2.28.1 chardet==5.0.0 tqdm==4.64.0  urllib3==1.26.12 toml==0.10.2 \
-                    charset-normalizer==2.1.1 pycparser==2.21 urllib3==1.26.12 && \
-         #fabric & pyOpenSSL
-         pip install fabric==2.7.1 invoke==1.7.1 paramiko==2.11.0 PyNaCl==1.5.0 bcrypt==3.2.2 \
-                     cffi==1.15.1 cryptography==37.0.4 pycparser==2.21 PyNaCl==1.5.0 six==1.16.0 \
-                     pyOpenSSL==22.0.0 \
-                     pathlib2==2.3.7 && \
+        pip install attrs==20.2.0 && \
+        pip install bcrypt==3.2.0 six==1.16.0 pycparser==2.21 cffi==1.15.0 && \
+        pip install charset-normalizer==2.0.4 certifi==2022.6.15 idna==3.3 urllib3==1.26.9 requests==2.27.1 && \
+        pip install six==1.16.0 python-dateutil==2.8.2 && \
+        pip install cffi==1.15.0 cryptography==3.4.8 && \
+        pip install cffi==1.15.0 cryptography==3.4.8 pyOpenSSL==21.0.0 && \
+        #Fabric
+        pip install bcrypt==3.2.0 PyNaCl==1.3.0 paramiko==2.7.2 invoke==1.4.1 fabric==2.5.0 && \
+        #pytest+mock
+        pip install iniconfig==1.1.1 packaging==20.4 pluggy==0.13.1 py==1.9.0 pyparsing==2.4.7 \
+                  pytest-assume==2.3.3 pytest-mock==3.3.1 pytest==6.1.2 mock==4.0.2 && \
         pip install python-dotenv==0.20.0 && \
         pip install bidict==0.22.0 && \
-        pip install python-dateutil==2.8.2
-
         #boto3
-
-
-
-
-
-#
-#
-#        #twine
-#        #https://twine.readthedocs.io/en/latest/changelog.html see 3.3.0 changelog
-#        #Add Python 3.9 support
-#        #see https://github.com/pypa/twine/pull/708
-#       #pip install twine==3.7.1
-
-
-
+        pip install rsa==4.7.2 pyasn1==0.4.8 jmespath==1.0.1 docutils==0.16 s3transfer==0.6.0 colorama==0.4.4 \
+               awscli==1.25.60 botocore==1.27.59 boto3==1.24.59 && \
+        #SQLAlchemy & Hive & Postgress
+        pip install thrift==0.16.0 thrift-sasl==0.4.3 sasl==0.3.1 pure-sasl==0.6.2 pure-transport==0.2.0 \
+                     future==0.18.2 PyHive==0.6.5 pg8000==1.19.3 SQLAlchemy==1.4.11 && \
+        #Twine (old pkginfo==1.6.1 rfc3986==1.4.0 readme-renderer==28.0)   \
+        pip install Pygments==2.13.0 SecretStorage==3.3.3 bleach==5.0.1 importlib-metadata==4.12.0 \
+                  requests-toolbelt==0.9.1 readme-renderer==37.0 rfc3986==2.0.0 pkginfo==1.8.3 \
+                    jeepney==0.8.0 keyring==23.8.2 tqdm==4.64.0  webencodings==0.5.1 zipp==3.8.1 twine==3.2.0
 
 
 #Cleanup
