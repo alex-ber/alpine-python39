@@ -182,11 +182,21 @@ RUN set -ex && \
                   requests-toolbelt==0.9.1 readme-renderer==37.0 rfc3986==2.0.0 pkginfo==1.8.3 \
                     jeepney==0.8.0 keyring==23.8.2 tqdm==4.64.0  webencodings==0.5.1 zipp==3.8.1 twine==3.2.0
 
+#nltk-data
+#RUN set -ex && python -m nltk.downloader -d /usr/share/nltk_data all
+
+RUN set -ex && pip freeze > /etc/installed.txt
 
 #Cleanup
 RUN set -ex && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 #RUN apk del glibc-i18n make gcc musl-dev build-base gfortran
 RUN rm -rf /var/cache/apk/*
+
+COPY enter_keyring.sh /etc/enter_keyring.sh
+COPY reuse_keyring.sh /etc/reuse_keyring.sh
+COPY unlock_keyring.sh /etc/unlock_keyring.sh
+COPY rest_keyring.sh /etc/rest_keyring.sh
+
 
 WORKDIR /
 #CMD ["/bin/sh"]
