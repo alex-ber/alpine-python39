@@ -20,29 +20,14 @@ ENV PIP_ROOT_USER_ACTION=ignore
 ARG GLIBC_VERSION=2.32-r0
 
 
+#Gnome-Keyring was removed because of https://gitlab.gnome.org/GNOME/gnome-keyring/-/issues/77
+
 #inspired by https://github.com/docker-library/python/blob/50bc440273100ee39bb1f1f84ed720a33a0be493/3.9/alpine3.16/Dockerfile
 #and by previous addittion that has ca-certificates-bundle without version
 RUN set -ex && \
     apk add --no-cache \
 		ca-certificates \
         tzdata
-
-#dbus-launch, dbus-run-session
-#expat is required by one of the other packages
-#13 packages at total
-RUN set -ex && \
-    apk add --no-cache expat=2.4.7-r0 \
-                        dbus-libs=1.12.20-r4 dbus=1.12.20-r4 libxau=1.0.9-r0 libxdmcp=1.1.3-r0 \
-                        libxcb=1.14-r2 libx11=1.7.2-r0 dbus-x11=1.12.20-r4
-
-
-#libgnome-keyring
-RUN set -ex && \
-   apk add --no-cache libgpg-error=1.42-r1 libgcrypt=1.9.4-r0 \
-           libffi=3.4.2-r1 libintl=0.21-r0 libblkid=2.37.4-r0 libmount=2.37.4-r0 pcre=8.45-r1 glib=2.70.1-r0 \
-           p11-kit=0.24.0-r1 gcr-base=3.40.0-r0 libcap-ng=0.8.2-r1 linux-pam=1.5.2-r0 \
-           gnome-keyring=40.0-r0 libgnome-keyring=3.12.0-r3
-
 
 #gcc, gfortran, lapack, blas (requires also ssl layer?)
 #see https://stackoverflow.com/questions/11912878/gcc-error-gcc-error-trying-to-exec-cc1-execvp-no-such-file-or-directory
@@ -133,6 +118,7 @@ RUN set -ex && \
                         libxml2-dev=2.9.14-r1 python3-dev=3.9.13-r1
 
 
+
 #https://stackoverflow.com/a/62555259/1137529
 RUN set -ex && \
     ln -s /usr/bin/python3.9 /usr/bin/python && \
@@ -146,7 +132,6 @@ RUN set -ex && \
 
 RUN set -ex && \
     pip install ruamel_yaml==0.15.100
-
 RUN set -ex && \
         #entrypoints==0.2.3 used in setup.py
         #This version of PyYAML==5.1 works with awscli
@@ -158,29 +143,42 @@ RUN set -ex && \
 
 #slim
 RUN set -ex && \
-        pip install attrs==20.2.0 && \
-        pip install bcrypt==3.2.0 six==1.16.0 pycparser==2.21 cffi==1.15.0 && \
-        pip install charset-normalizer==2.0.4 certifi==2022.6.15 idna==3.3 urllib3==1.26.9 requests==2.27.1 && \
-        pip install six==1.16.0 python-dateutil==2.8.2 && \
-        pip install cffi==1.15.0 cryptography==3.4.8 && \
-        pip install cffi==1.15.0 cryptography==3.4.8 pyOpenSSL==21.0.0 && \
+        pip install attrs==20.2.0
+RUN set -ex && \
+        pip install bcrypt==3.2.0 six==1.16.0 pycparser==2.21 cffi==1.15.0
+RUN set -ex && \
+        pip install charset-normalizer==2.0.4 certifi==2022.6.15 idna==3.3 urllib3==1.26.9 requests==2.27.1
+RUN set -ex && \
+        pip install six==1.16.0 python-dateutil==2.8.2
+RUN set -ex && \
+        pip install cffi==1.15.0 cryptography==3.4.8
+RUN set -ex && \
+        pip install cffi==1.15.0 cryptography==3.4.8 pyOpenSSL==21.0.0
+RUN set -ex && \
         #Fabric
-        pip install bcrypt==3.2.0 PyNaCl==1.3.0 paramiko==2.7.2 invoke==1.4.1 fabric==2.5.0 && \
+        pip install bcrypt==3.2.0 PyNaCl==1.3.0 paramiko==2.7.2 invoke==1.4.1 fabric==2.5.0
+RUN set -ex && \
         #pytest+mock
         pip install iniconfig==1.1.1 packaging==20.4 pluggy==0.13.1 py==1.9.0 pyparsing==2.4.7 \
-                  pytest-assume==2.3.3 pytest-mock==3.3.1 pytest==6.1.2 mock==4.0.2 && \
-        pip install python-dotenv==0.20.0 && \
-        pip install bidict==0.22.0 && \
+                  pytest-assume==2.3.3 pytest-mock==3.3.1 pytest==6.1.2 mock==4.0.2
+RUN set -ex && \
+        pip install python-dotenv==0.20.0
+RUN set -ex && \
+        pip install bidict==0.22.0
+RUN set -ex && \
         #boto3
         pip install rsa==4.7.2 pyasn1==0.4.8 jmespath==1.0.1 docutils==0.16 s3transfer==0.6.0 colorama==0.4.4 \
-               awscli==1.25.60 botocore==1.27.59 boto3==1.24.59 && \
-        #SQLAlchemy & Hive & Postgress
+               awscli==1.25.60 botocore==1.27.59 boto3==1.24.59
+RUN set -ex && \
+        #SQLAlchemy & Hive & Postgress \
+        #SASL was unfortunately updated from 0.2.1 due to https://codesti.com/issue/cloudera/python-sasl/21
         pip install thrift==0.16.0 thrift-sasl==0.4.3 sasl==0.3.1 pure-sasl==0.6.2 pure-transport==0.2.0 \
-                     future==0.18.2 PyHive==0.6.5 pg8000==1.19.3 SQLAlchemy==1.4.11 && \
+                     future==0.18.2 PyHive==0.6.5 pg8000==1.19.3 SQLAlchemy==1.4.11
+RUN set -ex && \
         #Twine (old pkginfo==1.6.1 rfc3986==1.4.0 readme-renderer==28.0)   \
-        pip install Pygments==2.13.0 SecretStorage==3.3.3 bleach==5.0.1 importlib-metadata==4.12.0 \
+        pip install Pygments==2.13.0 SecretStorage==3.3.1 bleach==5.0.1 importlib-metadata==4.12.0 \
                   requests-toolbelt==0.9.1 readme-renderer==37.0 rfc3986==2.0.0 pkginfo==1.8.3 \
-                    jeepney==0.8.0 keyring==23.8.2 tqdm==4.64.0  webencodings==0.5.1 zipp==3.8.1 twine==3.2.0
+                  jeepney==0.6.0 keyring==23.0.1 tqdm==4.64.0  webencodings==0.5.1 zipp==3.8.1 twine==3.2.0
 
 #nltk-data
 #RUN set -ex && python -m nltk.downloader -d /usr/share/nltk_data all
@@ -191,12 +189,6 @@ RUN set -ex && pip freeze > /etc/installed.txt
 RUN set -ex && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 #RUN apk del glibc-i18n make gcc musl-dev build-base gfortran
 RUN rm -rf /var/cache/apk/*
-
-COPY enter_keyring.sh /etc/enter_keyring.sh
-COPY reuse_keyring.sh /etc/reuse_keyring.sh
-COPY unlock_keyring.sh /etc/unlock_keyring.sh
-COPY rest_keyring.sh /etc/rest_keyring.sh
-
 
 WORKDIR /
 #CMD ["/bin/sh"]
@@ -233,7 +225,8 @@ CMD tail -f /dev/null
 #docker commit --change "CMD /bin/sh" --change "ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin: \
 #    ARCH=amd64 \
 #    PYTHONUNBUFFERED=1 \
-#    LANG=C.UTF-8" \
+#    LANG=C.UTF-8 \
+#    PIP_ROOT_USER_ACTION=ignore" \
 #    $(docker ps -q -n=1) alpine-python39-amd64-ef
 
 #docker run --name py3-arm64v8 -d alpine-python39-arm64v8
@@ -245,22 +238,23 @@ CMD tail -f /dev/null
 #docker commit --change "CMD /bin/sh" --change "ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin: \
 #    ARCH=arm64v8 \
 #    PYTHONUNBUFFERED=1 \
-#    LANG=C.UTF-8" \
+#    LANG=C.UTF-8 \
+#    PIP_ROOT_USER_ACTION=ignore" \
 #    $(docker ps -q -n=1)  alpine-python39-arm64v8-ef
 
 
-#docker tag alpine-python39-amd64-ef alexberkovich/alpine-python39:0.0.1-amd64
-#docker tag alpine-python39-arm64v8-ef alexberkovich/alpine-python39:0.0.1-arm64v8
-#docker push alexberkovich/alpine-python39:0.0.1-amd64
-#docker push alexberkovich/alpine-python39:0.0.1-arm64v8
-#docker manifest create alexberkovich/alpine-python39:0.0.1 --amend alexberkovich/alpine-python39:0.0.1-arm64v8 --amend alexberkovich/alpine-python39:0.0.1-amd64
-#docker manifest annotate --arch arm64 --variant v8 alexberkovich/alpine-python39:0.0.1 alexberkovich/alpine-python39:0.0.1-arm64v8
-#docker manifest annotate --arch amd64 alexberkovich/alpine-python39:0.0.1 alexberkovich/alpine-python39:0.0.1-amd64
-#docker manifest push --purge alexberkovich/alpine-python39:0.0.1
+#docker tag alpine-python39-amd64-ef alexberkovich/alpine-python39:0.4.0-amd64
+#docker tag alpine-python39-arm64v8-ef alexberkovich/alpine-python39:0.4.0-arm64v8
+#docker push alexberkovich/alpine-python39:0.4.0-amd64
+#docker push alexberkovich/alpine-python39:0.4.0-arm64v8
+#docker manifest create alexberkovich/alpine-python39:0.4.0 --amend alexberkovich/alpine-python39:0.4.0-arm64v8 --amend alexberkovich/alpine-python39:0.4.0-amd64
+#docker manifest annotate --arch arm64 --variant v8 alexberkovich/alpine-python39:0.4.0 alexberkovich/alpine-python39:0.4.0-arm64v8
+#docker manifest annotate --arch amd64 alexberkovich/alpine-python39:0.4.0 alexberkovich/alpine-python39:0.4.0-amd64
+#docker manifest push --purge alexberkovich/alpine-python39:0.4.0
 
-#docker manifest create alexberkovich/alpine-python39:latest --amend alexberkovich/alpine-python39:0.0.1-arm64v8 --amend alexberkovich/alpine-python39:0.0.1-amd64
-#docker manifest annotate --arch arm64 --variant v8 alexberkovich/alpine-python39:latest alexberkovich/alpine-python39:0.0.1-arm64v8
-#docker manifest annotate --arch amd64 alexberkovich/alpine-python39:latest alexberkovich/alpine-python39:0.0.1-amd64
+#docker manifest create alexberkovich/alpine-python39:latest --amend alexberkovich/alpine-python39:0.4.0-arm64v8 --amend alexberkovich/alpine-python39:0.4.0-amd64
+#docker manifest annotate --arch arm64 --variant v8 alexberkovich/alpine-python39:latest alexberkovich/alpine-python39:0.4.0-arm64v8
+#docker manifest annotate --arch amd64 alexberkovich/alpine-python39:latest alexberkovich/alpine-python39:0.4.0-amd64
 #docker manifest push --purge alexberkovich/alpine-python39:latest
 # EOF
 
